@@ -1,6 +1,6 @@
 // Flow 10.1 / 10.2 / 10.4 (Creator profile as a fan sees it), 04.1 (My Profile), 12.3/12.4/12.6/12.7 (Brand).
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Screen, Icon, Img, Avatar, Tag, Button, SectionHeader, Footnote, fmt, short, useMe, useToast } from '../components/ui.jsx';
 import { PostTile } from '../components/Post.jsx';
 import { useMoney } from '../components/MoneySheets.jsx';
@@ -94,9 +94,10 @@ export function CreatorProfile() {
   const toast = useToast();
   const c = Object.values(s.profiles).find((p) => p.handle === handle);
   const [open, setOpen] = useState(null);
+  const [qp] = useSearchParams();
   if (!c) return <Screen nav="explore"><p>Not found</p></Screen>;
   if (c.kind === 'brand') { nav('/brand/' + c.id, { replace: true }); return null; }
-  if (c.id === me) { nav('/studio', { replace: true }); return null; }
+  if (c.id === me && !qp.get('preview')) { nav('/studio', { replace: true }); return null; }
   const following = isFollowing(s, me, c.id);
   const sub = subscriptionOf(s, me, c.id);
   const posts = s.posts.filter((p) => p.creator_id === c.id).sort((a, b) => b.created_at.localeCompare(a.created_at));
@@ -125,7 +126,7 @@ export function CreatorProfile() {
         </div>
       )}
       <div className="col gap12 mt16">
-        {!following ? (
+        {c.id === me ? <span className="b-sm t2">This is how fans see your profile.</span> : !following ? (
           <Button onClick={async () => { await actions.follow(me, c.id); toast(`You're a fan of ${first}`); }}>Be a fan</Button>
         ) : (
           <>
@@ -207,7 +208,7 @@ export function MyProfile() {
       <div className="row gap8 mt12">
         <Button kind="outlined" size="sm" onClick={() => nav('/setup/profile')}>Edit</Button>
         <Button kind="outlined" size="sm" onClick={() => nav('/sponsorship')}>Brand deal</Button>
-        <Button kind="outlined" size="sm" onClick={() => nav('/c/rae.k')}>Fan view</Button>
+        <Button kind="outlined" size="sm" onClick={() => nav('/c/' + c.handle + '?preview=1')}>Fan view</Button>
       </div>
       <span className="b-sm t2 mt16">{boosts.length ? `${boosts.length} boost live · ${Math.max(1, Math.round((new Date(boosts[0].created_at).getTime() + boosts[0].hours * 3600e3 - Date.now()) / 3600e3))}h left` : 'No boost running'} · Top Picks queued for Friday</span>
       <button className="card bordered row gap12 mt16" onClick={() => nav('/radar/discovery')}>
